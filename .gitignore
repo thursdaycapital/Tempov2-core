@@ -1,2 +1,14 @@
-node_modules/
-build/
+.env
+.env.local
+.env.production
+.env.development
+node_modules
+artifacts
+cache
+frontend/node_modules
+frontend/dist
+.npm-cache
+frontend/.npm-cache
+.vite
+.DS_Store
+*.log
