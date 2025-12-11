@@ -48,7 +48,6 @@ function App() {
     if (isConfirmed) {
       refetchLib()
       refetchUsd()
-      // alert("Transaction Confirmed!") // Removed alert for better UX
     }
   }, [isConfirmed])
 
@@ -59,6 +58,7 @@ function App() {
       abi: ERC20_ABI,
       functionName: 'mint',
       args: [address, parseEther('1000')],
+      gas: 500000n, // Manual Gas Limit
     })
   }
 
@@ -69,6 +69,7 @@ function App() {
       abi: ERC20_ABI,
       functionName: 'approve',
       args: [routerAddress as `0x${string}`, parseEther(amount)],
+      gas: 500000n, // Manual Gas Limit
     })
   }
 
@@ -88,6 +89,7 @@ function App() {
         address as `0x${string}`,
         BigInt(Math.floor(Date.now() / 1000) + 60 * 20),
       ],
+      gas: 3000000n, // Manual Gas Limit
     })
   }
 
@@ -104,6 +106,7 @@ function App() {
         address as `0x${string}`,
         BigInt(Math.floor(Date.now() / 1000) + 60 * 20),
       ],
+      gas: 3000000n, // Manual Gas Limit
     })
   }
 
