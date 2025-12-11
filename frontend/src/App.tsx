@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { DEPLOYED_ADDRESSES } from './config'
-import { ROUTER_ABI, ERC20_ABI, FAUCET_ABI, CREATOR_ABI } from './abis'
+import { ROUTER_ABI, ERC20_ABI, FAUCET_ABI, CREATOR_ABI, MYNFT_ABI, BATCH_ABI } from './abis'
 
 // Icons
 const ArrowDown = () => (
@@ -27,12 +27,16 @@ function App() {
   const [creatorAddress] = useState(DEPLOYED_ADDRESSES.TOKEN_CREATOR)
 
   // UI State
-  const [tab, setTab] = useState<'swap' | 'liquidity' | 'faucet' | 'create'>('swap')
+  const [tab, setTab] = useState<'swap' | 'liquidity' | 'faucet' | 'create' | 'nft' | 'batch'>('swap')
   const [amountA, setAmountA] = useState('')
   const [amountB, setAmountB] = useState('')
   const [newTokenName, setNewTokenName] = useState('')
   const [newTokenSymbol, setNewTokenSymbol] = useState('')
   const [newTokenSupply, setNewTokenSupply] = useState('1000000000')
+  const [nftURI, setNftURI] = useState('')
+  const [batchToken, setBatchToken] = useState(DEPLOYED_ADDRESSES.LIB_USD)
+  const [batchAmount, setBatchAmount] = useState('')
+  const [batchRecipients, setBatchRecipients] = useState('')
 
   // Read Balances
   const { data: libBalance, refetch: refetchLib } = useReadContract({
@@ -129,6 +133,58 @@ function App() {
     })
   }
 
+  const mintNft = async () => {
+    if (!nftURI) return
+    writeContract({
+      address: DEPLOYED_ADDRESSES.MYNFT as `0x${string}`,
+      abi: MYNFT_ABI,
+      functionName: 'mint',
+      args: [address as `0x${string}`, nftURI],
+      // @ts-ignore
+      feeToken: '0x20c0000000000000000000000000000000000001',
+    })
+  }
+
+  const parseRecipients = () => {
+    const items = batchRecipients
+      .split(/[\n,;]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+    const valid = items.filter((a) => /^0x[a-fA-F0-9]{40}$/.test(a))
+    if (valid.length !== items.length) {
+      alert('Some recipient addresses are invalid')
+      return null
+    }
+    return valid
+  }
+
+  const approveBatch = async () => {
+    const recips = parseRecipients()
+    if (!recips) return
+    if (!batchAmount) return
+    const total = parseEther(batchAmount) * BigInt(recips.length)
+    writeContract({
+      address: batchToken as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: 'approve',
+      args: [DEPLOYED_ADDRESSES.BATCH_TRANSFER as `0x${string}`, total],
+    })
+  }
+
+  const sendBatch = async () => {
+    const recips = parseRecipients()
+    if (!recips) return
+    if (!batchAmount) return
+    const amt = parseEther(batchAmount)
+    const amounts = recips.map(() => amt)
+    writeContract({
+      address: DEPLOYED_ADDRESSES.BATCH_TRANSFER as `0x${string}`,
+      abi: BATCH_ABI,
+      functionName: 'batchTransfer',
+      args: [batchToken as `0x${string}`, recips, amounts],
+    })
+  }
+
   const formatBalance = (balance: bigint | undefined) => {
     if (!balance) return '0'
     return parseFloat(formatEther(balance)).toFixed(2)
@@ -143,7 +199,7 @@ function App() {
             Tempo Swap
           </div>
           <div className="hidden md:flex gap-4">
-            {['Swap', 'Liquidity', 'Faucet', 'Create'].map((t) => (
+            {['Swap', 'Liquidity', 'Faucet', 'Create', 'NFT', 'Batch'].map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t.toLowerCase() as any)}
@@ -413,6 +469,87 @@ function App() {
             </div>
           )}
           
+          {tab === 'nft' && (
+            <div className="flex flex-col gap-4 p-4">
+               <div className="bg-[#1b2236] p-4 rounded-xl text-sm text-gray-300">
+                  Mint an NFT to your address. Provide a full tokenURI (e.g. https://.../metadata.json).
+               </div>
+               <div className="bg-[#0d111c] p-4 rounded-xl">
+                 <label className="text-gray-400 mb-2 block">tokenURI</label>
+                 <input
+                   className="bg-transparent w-full text-lg outline-none text-white placeholder-gray-600"
+                   placeholder="https://example.com/metadata.json"
+                   value={nftURI}
+                   onChange={e => setNftURI(e.target.value)}
+                 />
+               </div>
+
+               <button
+                 onClick={mintNft}
+                 disabled={!nftURI || isPending}
+                 className="w-full bg-[#4c82fb] hover:bg-[#3b66c4] disabled:bg-[#293249] disabled:text-gray-500 py-4 rounded-2xl font-bold text-white text-lg transition-colors"
+               >
+                 {isPending ? 'Minting...' : 'Mint NFT'}
+               </button>
+            </div>
+          )}
+
+          {tab === 'batch' && (
+            <div className="flex flex-col gap-4 p-4">
+               <div className="bg-[#1b2236] p-4 rounded-xl text-sm text-gray-300">
+                  Batch transfer a stablecoin to multiple recipients. Paste addresses (one per line / comma / semicolon) and set the amount per recipient.
+               </div>
+
+               <div className="bg-[#0d111c] p-4 rounded-xl">
+                 <label className="text-gray-400 mb-2 block">Token address (ERC20)</label>
+                 <input
+                   className="bg-transparent w-full text-lg outline-none text-white placeholder-gray-600"
+                   value={batchToken}
+                   onChange={e => setBatchToken(e.target.value)}
+                 />
+               </div>
+
+               <div className="bg-[#0d111c] p-4 rounded-xl">
+                 <label className="text-gray-400 mb-2 block">Recipients (one per line / comma / semicolon)</label>
+                 <textarea
+                   className="bg-transparent w-full text-sm outline-none text-white placeholder-gray-600 h-32"
+                   placeholder={"0xabc...\n0xdef...\n0xghi..."}
+                   value={batchRecipients}
+                   onChange={e => setBatchRecipients(e.target.value)}
+                 />
+               </div>
+
+               <div className="bg-[#0d111c] p-4 rounded-xl">
+                 <label className="text-gray-400 mb-2 block">Amount per recipient</label>
+                 <input
+                   className="bg-transparent w-full text-lg outline-none text-white placeholder-gray-600"
+                   placeholder="10"
+                   type="number"
+                   min="0"
+                   value={batchAmount}
+                   onChange={e => setBatchAmount(e.target.value)}
+                 />
+               </div>
+
+               <div className="grid grid-cols-2 gap-2">
+                 <button
+                   onClick={approveBatch}
+                   disabled={!batchAmount || !batchRecipients}
+                   className="bg-[#293249] hover:bg-[#343e59] text-[#4c82fb] font-bold py-4 rounded-2xl text-lg transition-colors disabled:opacity-50"
+                 >
+                   Approve
+                 </button>
+                 <button
+                   onClick={sendBatch}
+                   disabled={!batchAmount || !batchRecipients}
+                   className="bg-[#4c82fb] hover:bg-[#3b66c4] text-white font-bold py-4 rounded-2xl text-lg transition-colors disabled:bg-[#293249] disabled:text-gray-500"
+                 >
+                   Send Batch
+                 </button>
+               </div>
+            </div>
+          )}
+
           {error && (
             <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm break-all">
                {error.message}
