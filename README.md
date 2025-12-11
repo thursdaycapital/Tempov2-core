@@ -2,6 +2,24 @@
 
 这是一个基于 Uniswap V2 修改的去中心化交易所 (DEX) 示例项目，专为 **Tempo Testnet** 构建。包含完整的智能合约部署脚本和基于 React + Wagmi 的前端界面。
 
+## 🌟 功能总览（前端标签）
+- **Swap**：代币兑换（默认 LIB ↔ libUSD，可在代码中配置其他代币）。
+- **Liquidity**：添加/移除流动性。
+- **Faucet**：一键领取 LIB / libUSD，附官方 Gas 水龙头入口（Tempo 需要 USD 作 Gas）。
+- **Create**：一键发行自定义 ERC20（基于 TokenCreator）。
+- **NFT**：铸造自定义 tokenURI 的 NFT（基于 MyNFT）。
+- **Batch**：稳定币一对多转账，支持批量地址、批量金额（先 Approve 再 Send）。
+
+## 📌 已部署合约（Tempo Testnet）
+如需替换，请更新 `frontend/src/config.ts`：
+- Router：`0xBB8B71E95396C01EB1cA9425624552F5134B830d`
+- LIB Token：`0x0F9c2A163cD81c96f5bf4cCba2Eb0C437251e478`
+- libUSD：`0x9d5bd1F10b6410a23EB90F0F8782bdDaE7ff9cac`
+- Faucet：`0x8ea2dDD9DD550d500B4cef4C560fE27cde37508D`
+- TokenCreator：`0x8C6e78007cB0F5859cb2A5ef48e81594094b6A33`
+- MyNFT：`0xD19EC609aC14757EF7DAE80f8697ab5876cb2Ae2`
+- BatchTransfer：`0xb44FC4e996447F9202adB76CfBA2953F417Cc1F5`
+
 ## 📋 准备工作
 
 在开始之前，请确保你的电脑上安装了以下软件：
@@ -109,6 +127,7 @@ npm run dev
 2.  **领取测试代币**：
     - 点击 "Faucet" 标签页。
     - 点击 "Mint 1000 LIB" 和 "Mint 1000 libUSD"。
+    - 如果 Gas 不足，点击同页的官方水龙头链接领取 Tempo USD。
 3.  **添加流动性**：
     - 点击 "Liquidity" 标签页。
     - 输入 LIB 和 libUSD 的数量（例如各 100）。
@@ -117,6 +136,16 @@ npm run dev
     - 点击 "Swap" 标签页。
     - 输入想卖出的 LIB 数量。
     - 点击 "Swap" 完成交易。
+5.  **创建代币 (Create)**：
+    - 填写 Name / Symbol / 初始供应，点击 Create Token。
+    - 新代币地址会在终端/Explorer 中可查，前端如需使用可写入 `config.ts` 或在代码中自定义。
+6.  **铸造 NFT (NFT)**：
+    - 粘贴 tokenURI（如 https://.../metadata.json），点击 Mint NFT。
+7.  **批量转账 (Batch)**：
+    - Token 填要转的 ERC20 地址（默认 libUSD）。
+    - Recipients 可多行/逗号/分号分隔地址。
+    - Amount per recipient 填单个收款人金额。
+    - 先 **Approve**（授权总额=金额×人数），再 **Send Batch**。
 
 ---
 
@@ -125,6 +154,7 @@ npm run dev
 - **报错 "Insufficient funds"**：你的钱包没有足够的 Gas 费。请确保你已经领了水（Tempo Testnet 使用 USD 作为 Gas）。
 - **页面显示空白或报错**：请检查控制台 (F12) 是否有错误信息，通常是合约地址配置错误。
 - **Nonce too low**：重置 MetaMask 账户交易历史（设置 -> 高级 -> 重置账户）。
+- **Batch 回滚**：确认钱包中余额足够且已正确执行 Approve；收款人地址长度一致、格式正确（0x 开头 40 hex）。
 
 ---
 
