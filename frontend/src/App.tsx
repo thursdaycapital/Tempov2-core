@@ -108,6 +108,24 @@ function App() {
         address as `0x${string}`,
         BigInt(Math.floor(Date.now() / 1000) + 60 * 20),
       ],
+      // @ts-ignore
+      feeToken: '0x20c0000000000000000000000000000000000001',
+    })
+  }
+
+  const createToken = async () => {
+    if (!newTokenName || !newTokenSymbol) return
+    writeContract({
+      address: creatorAddress as `0x${string}`,
+      abi: CREATOR_ABI,
+      functionName: 'createToken',
+      args: [
+        newTokenName, 
+        newTokenSymbol, 
+        parseEther(newTokenSupply)
+      ],
+      // @ts-ignore
+      feeToken: '0x20c0000000000000000000000000000000000001',
     })
   }
 
@@ -310,6 +328,20 @@ function App() {
                   Mint test tokens to simulate trading on Tempo Testnet.
                </div>
                
+               <button 
+                onClick={() => window.open('https://docs.tempo.xyz/guide/use-accounts/add-funds', '_blank')}
+                className="w-full bg-[#293249] hover:bg-[#343e59] p-4 rounded-2xl flex items-center justify-between group border border-yellow-500/30"
+              >
+                  <div className="flex items-center gap-3">
+                     <span className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-xs font-bold text-black">⛽</span>
+                     <div className="text-left">
+                        <span className="font-bold text-lg block">Get Tempo USD (Gas)</span>
+                        <span className="text-xs text-gray-400">Required for transaction fees</span>
+                     </div>
+                  </div>
+                  <span className="text-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity">Open &rarr;</span>
+               </button>
+
                <button 
                 onClick={() => mintTokens(libTokenAddress)}
                 className="w-full bg-[#293249] hover:bg-[#343e59] p-4 rounded-2xl flex items-center justify-between group"
