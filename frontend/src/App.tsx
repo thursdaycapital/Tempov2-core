@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { DEPLOYED_ADDRESSES } from './config'
-import { ROUTER_ABI, ERC20_ABI } from './abis'
+import { ROUTER_ABI, ERC20_ABI, FAUCET_ABI } from './abis'
 
 // Icons
 const ArrowDown = () => (
@@ -23,6 +23,7 @@ function App() {
   const [routerAddress] = useState(DEPLOYED_ADDRESSES.ROUTER)
   const [libTokenAddress] = useState(DEPLOYED_ADDRESSES.LIB_TOKEN)
   const [libUSDAddress] = useState(DEPLOYED_ADDRESSES.LIB_USD)
+  const [faucetAddress] = useState(DEPLOYED_ADDRESSES.FAUCET)
 
   // UI State
   const [tab, setTab] = useState<'swap' | 'liquidity' | 'faucet'>('swap')
@@ -54,13 +55,10 @@ function App() {
   const mintTokens = async (token: string) => {
     if (!address) return
     writeContract({
-      address: token as `0x${string}`,
-      abi: ERC20_ABI,
+      address: faucetAddress as `0x${string}`,
+      abi: FAUCET_ABI,
       functionName: 'mint',
-      args: [address, parseEther('1000')],
-      gas: 500000n, // Manual Gas Limit
-      // @ts-ignore
-      feeToken: '0x20c0000000000000000000000000000000000001',
+      args: [token as `0x${string}`, parseEther('1000')],
     })
   }
 
@@ -71,9 +69,6 @@ function App() {
       abi: ERC20_ABI,
       functionName: 'approve',
       args: [routerAddress as `0x${string}`, parseEther(amount)],
-      gas: 500000n, // Manual Gas Limit
-      // @ts-ignore
-      feeToken: '0x20c0000000000000000000000000000000000001',
     })
   }
 
@@ -93,9 +88,6 @@ function App() {
         address as `0x${string}`,
         BigInt(Math.floor(Date.now() / 1000) + 60 * 20),
       ],
-      gas: 3000000n, // Manual Gas Limit
-      // @ts-ignore
-      feeToken: '0x20c0000000000000000000000000000000000001',
     })
   }
 
@@ -112,9 +104,6 @@ function App() {
         address as `0x${string}`,
         BigInt(Math.floor(Date.now() / 1000) + 60 * 20),
       ],
-      gas: 3000000n, // Manual Gas Limit
-      // @ts-ignore
-      feeToken: '0x20c0000000000000000000000000000000000001',
     })
   }
 
