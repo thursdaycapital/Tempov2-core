@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { DEPLOYED_ADDRESSES } from './config'
-import { ROUTER_ABI, ERC20_ABI, FAUCET_ABI } from './abis'
+import { ROUTER_ABI, ERC20_ABI, FAUCET_ABI, CREATOR_ABI } from './abis'
 
 // Icons
 const ArrowDown = () => (
@@ -21,14 +21,18 @@ function App() {
 
   // Config State
   const [routerAddress] = useState(DEPLOYED_ADDRESSES.ROUTER)
-  const [libTokenAddress] = useState(DEPLOYED_ADDRESSES.LIB_TOKEN)
-  const [libUSDAddress] = useState(DEPLOYED_ADDRESSES.LIB_USD)
+  const [libTokenAddress, setLibTokenAddress] = useState(DEPLOYED_ADDRESSES.LIB_TOKEN)
+  const [libUSDAddress, setLibUSDAddress] = useState(DEPLOYED_ADDRESSES.LIB_USD)
   const [faucetAddress] = useState(DEPLOYED_ADDRESSES.FAUCET)
+  const [creatorAddress] = useState(DEPLOYED_ADDRESSES.TOKEN_CREATOR)
 
   // UI State
-  const [tab, setTab] = useState<'swap' | 'liquidity' | 'faucet'>('swap')
+  const [tab, setTab] = useState<'swap' | 'liquidity' | 'faucet' | 'create'>('swap')
   const [amountA, setAmountA] = useState('')
   const [amountB, setAmountB] = useState('')
+  const [newTokenName, setNewTokenName] = useState('')
+  const [newTokenSymbol, setNewTokenSymbol] = useState('')
+  const [newTokenSupply, setNewTokenSupply] = useState('1000000000')
 
   // Read Balances
   const { data: libBalance, refetch: refetchLib } = useReadContract({
@@ -121,7 +125,7 @@ function App() {
             Tempo Swap
           </div>
           <div className="hidden md:flex gap-4">
-            {['Swap', 'Liquidity', 'Faucet'].map((t) => (
+            {['Swap', 'Liquidity', 'Faucet', 'Create'].map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t.toLowerCase() as any)}
@@ -327,6 +331,53 @@ function App() {
                   </div>
                    <span className="text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity">Mint &rarr;</span>
                </button>
+            </div>
+          )}
+
+          {tab === 'create' && (
+            <div className="flex flex-col gap-4 p-4">
+               <div className="bg-[#1b2236] p-4 rounded-xl text-sm text-gray-300">
+                  Create your own ERC20 token on Tempo.
+               </div>
+               
+               <div className="grid gap-2">
+                  <div className="bg-[#0d111c] p-4 rounded-xl">
+                     <label className="text-gray-400 mb-2 block">Token Name</label>
+                     <input 
+                       className="bg-transparent w-full text-lg outline-none text-white placeholder-gray-600" 
+                       placeholder="e.g. My Custom Token" 
+                       value={newTokenName}
+                       onChange={e => setNewTokenName(e.target.value)}
+                     />
+                  </div>
+                  <div className="bg-[#0d111c] p-4 rounded-xl">
+                     <label className="text-gray-400 mb-2 block">Symbol</label>
+                     <input 
+                       className="bg-transparent w-full text-lg outline-none text-white placeholder-gray-600" 
+                       placeholder="e.g. MCT" 
+                       value={newTokenSymbol}
+                       onChange={e => setNewTokenSymbol(e.target.value)}
+                     />
+                  </div>
+                  <div className="bg-[#0d111c] p-4 rounded-xl">
+                     <label className="text-gray-400 mb-2 block">Initial Supply</label>
+                     <input 
+                       className="bg-transparent w-full text-lg outline-none text-white placeholder-gray-600" 
+                       placeholder="1000000000" 
+                       type="number"
+                       value={newTokenSupply}
+                       onChange={e => setNewTokenSupply(e.target.value)}
+                     />
+                  </div>
+               </div>
+
+               <button 
+                onClick={createToken}
+                disabled={!newTokenName || !newTokenSymbol || isPending}
+                className="w-full bg-[#4c82fb] hover:bg-[#3b66c4] disabled:bg-[#293249] disabled:text-gray-500 py-4 rounded-2xl font-bold text-white text-lg transition-colors"
+              >
+                {isPending ? 'Creating...' : 'Create Token'}
+              </button>
             </div>
           )}
           
